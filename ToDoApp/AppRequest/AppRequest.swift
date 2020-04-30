@@ -9,6 +9,12 @@
 import Foundation
 import RxSwift
 import RxRelay
+import AppEntity
+
+public protocol ToDoRequest {
+    func createToDo(_ todo: ToDo) throws -> Single<AppEntity.ToDo>
+    func getAllToDo() throws -> Single<[ToDo]>
+}
 
 public class AppRequest {
     
@@ -25,7 +31,8 @@ public class AppRequest {
         case invalidPaths
         case invalidParameters
         case unsuccessfulStatusCode(Int)
-        case noData
+        case noResponseData
+        case failedToEncode(entity: Codable)
         case failedToDecode(type: Codable.Type, data: Data)
     }
     
@@ -37,7 +44,9 @@ public class AppRequest {
     
     private let baseURL: String = "http://localhost:8080"
     
-    public func get<Entity: Codable>(paths: [String], paramters: [String: String] = [:], headers: [String: String] = [:]) -> Single<Entity> {
+    public init() { }
+    
+    private func get<Entity: Codable>(paths: [String], paramters: [String: String] = [:], headers: [String: String] = [:]) -> Single<Entity> {
         Single.create { [weak self] observer-> Disposable in
             guard let self = self else {
                 return Disposables.create()
@@ -56,7 +65,7 @@ public class AppRequest {
                         }
                     }
                     guard let data = data else {
-                        observer(.error(Error.noData))
+                        observer(.error(Error.noResponseData))
                         return
                     }
                     guard let entity = try? JSONDecoder().decode(Entity.self, from: data) else {
@@ -74,7 +83,7 @@ public class AppRequest {
         }
     }
     
-    public func create<Entity: Codable>(paths: [String], body: Data, headers: [String: String] = [:]) -> Single<Entity> {
+    private func create<Entity: Codable>(paths: [String], body: Data, headers: [String: String] = [:]) -> Single<Entity> {
         Single.create { [weak self] observer -> Disposable in
             guard let self = self else {
                 return Disposables.create()
@@ -93,7 +102,7 @@ public class AppRequest {
                         }
                     }
                     guard let data = data else {
-                        observer(.error(Error.noData))
+                        observer(.error(Error.noResponseData))
                         return
                     }
                     guard let entity = try? JSONDecoder().decode(Entity.self, from: data) else {
@@ -134,5 +143,18 @@ public class AppRequest {
             request.addValue(value, forHTTPHeaderField: field)
         }
         return request
+    }
+}
+
+extension AppRequest: ToDoRequest {
+    public func createToDo(_ todo: ToDo) throws -> Single<AppEntity.ToDo> {
+        guard let data = try? JSONEncoder().encode(todo) else {
+            throw Error.failedToEncode(entity: todo)
+        }
+        return create(paths: ["/todo"], body: data)
+    }
+    
+    public func getAllToDo() throws -> Single<[ToDo]> {
+        get(paths: ["/todo"])
     }
 }

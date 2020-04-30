@@ -6,11 +6,12 @@
 //  Copyright © 2020 Fumiya Tanaka. All rights reserved.
 //
 
-public class AppEntity {
+public struct ToDo: Codable {
+    let id: Int?
+    public let title: String
     
-    public struct ToDo: Codable {
-        let id: Int?
-        let title: String
+    public init(id: Int? = nil, title: String) {
+        self.id = id
+        self.title = title
     }
-    
 }
