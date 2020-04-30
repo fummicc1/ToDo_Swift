@@ -14,6 +14,8 @@ public class AppRequest {
     
     public enum Error: Swift.Error {
         case some(Swift.Error)
+        case invalidPaths
+        case invalidParameters
         case unsuccessfulStatusCode(Int)
         case noData
         case failedToDecode(type: Codable.Type, data: Data)
@@ -25,9 +27,36 @@ public class AppRequest {
         return session
     }()
     
-    private func get<Entity: Codable>(request: URLRequest) -> Single<Entity> {
+    private let baseURL: String = "http://localhost:8080"
+    
+    public func get<Entity: Codable>(paths: [String], paramters: [String: String] = [:], headerFields: [String: String] = [:]) -> Single<Entity> {
         Single.create { [weak self] observer-> Disposable in
-            self?.session.dataTask(with: request, completionHandler: { data, response, error in
+            guard let self = self else {
+                return Disposables.create()
+            }
+            guard var baseURL = URL(string: self.baseURL) else {
+                fatalError()
+            }
+            paths.forEach { baseURL.appendPathComponent($0) }
+            guard var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: true) else {
+                observer(.error(Error.invalidPaths))
+                return Disposables.create()
+            }
+            components.queryItems = []
+            for (name, value) in paramters {
+                let queryItem = URLQueryItem(name: name, value: value)
+                components.queryItems?.append(queryItem)
+            }
+            guard let url = components.url else {
+                observer(.error(Error.invalidParameters))
+                return Disposables.create()
+            }
+            var request = URLRequest(url: url)
+            request.httpMethod = "GET"
+            for (field, value) in headerFields {
+                request.addValue(value, forHTTPHeaderField: field)
+            }
+            self.session.dataTask(with: request, completionHandler: { data, response, error in
                 if let error = error {
                     observer(.error(Error.some(error)))
                     return
