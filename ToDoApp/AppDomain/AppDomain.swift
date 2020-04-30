@@ -19,7 +19,9 @@ public class AppDomain {
     
     let apiRequest: ToDoRequest = AppRequest()
     
-    func createToDo(title: String) -> Observable<Void> {
+    public init() { }
+    
+    public func createToDo(title: String) -> Observable<Void> {
         
         if title.isEmpty {
             return Observable.error(Error.emptyTitle)
@@ -33,7 +35,7 @@ public class AppDomain {
         }
     }
     
-    func getToDos() -> Observable<[AppEntity.ToDo]> {
+    public func getToDos() -> Observable<[AppEntity.ToDo]> {
         do {
             return try self.apiRequest.getAllToDo().asObservable()
         } catch {

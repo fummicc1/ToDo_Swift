@@ -12,5 +12,14 @@ import RxCocoa
 import AppDomain
 
 class ViewController: UIViewController {
+    @IBOutlet private weak var tableView: UITableView!
+    
+    private let domain = AppDomain()
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        tableView.delegate = self
+        tableView.dataSource
+    }
 }
 
