@@ -8,7 +8,10 @@
 
 import Foundation
 import UIKit
+import RxSwift
 
 class CreateToDoView: UIView {
     
+    @IBOutlet private weak var contentTextView: UITextView!
+    @IBOutlet private weak var createButton: UIButton!
 }
